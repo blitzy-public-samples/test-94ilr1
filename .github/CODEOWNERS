@@ -1,0 +1,39 @@
+# Unless a later match takes precedence, @platform-leads will be requested for
+# review when someone opens a pull request.
+*       @platform-leads
+
+# Email Service Implementation
+src/backend/email-service/**    @email-service-team @backend-leads @security-team
+
+# Context Engine and ML Components
+src/backend/context-engine/**    @context-engine-team @ml-leads @security-team
+
+# Response Generation Service
+src/backend/response-generator/**    @response-generator-team @ml-leads @security-team
+
+# API Gateway Service
+src/backend/api-gateway/**    @api-team @backend-leads @security-team
+
+# Authentication Service
+src/backend/auth-service/**    @security-team @backend-leads
+
+# Frontend Application
+src/web/**    @frontend-team @ui-leads @security-team
+
+# Infrastructure Configuration
+infrastructure/**    @devops-team @platform-leads @security-team
+
+# Kubernetes Configuration
+src/backend/k8s/**    @devops-team @platform-leads @security-team
+
+# CI/CD Workflow Configuration
+.github/workflows/**    @devops-team @platform-leads @security-team
+
+# Shared Backend Code
+src/backend/shared/**    @backend-leads @platform-leads @security-team
+
+# Security Configuration
+infrastructure/security/**    @security-team @platform-leads
+
+# Monitoring Configuration
+infrastructure/monitoring/**    @devops-team @platform-leads @security-team
