@@ -1,0 +1,154 @@
+# Jaeger Operator Configuration v1.45.0
+# Storage Backend: Elasticsearch v8.10.0
+apiVersion: jaegertracing.io/v1
+kind: Jaeger
+metadata:
+  name: email-platform-jaeger
+  namespace: monitoring
+  labels:
+    app: email-platform
+    component: tracing
+spec:
+  strategy: production  # Production deployment strategy for high availability
+  
+  # Storage Configuration using Elasticsearch
+  storage:
+    type: elasticsearch
+    options:
+      es.server-urls: http://elasticsearch:9200
+      es.index-prefix: email-platform
+      es.num-shards: 5
+      es.num-replicas: 2
+      es.bulk.size: "5000000"
+      es.bulk.workers: 5
+      es.bulk.flush-interval: "200ms"
+      es.timeout: "15s"
+      es.retention.check-interval: "24h"
+    securityOptions:
+      tls: true
+      ca: /etc/jaeger/certificates/ca.crt
+      cert: /etc/jaeger/certificates/tls.crt
+      key: /etc/jaeger/certificates/tls.key
+
+  # Ingress Configuration
+  ingress:
+    enabled: true
+    security: true
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+
+  # Sampling Configuration
+  sampling:
+    type: probabilistic
+    param: 0.1
+    options:
+      default_strategy:
+        type: probabilistic
+        param: 0.1
+      service_strategies:
+        - service: api-gateway
+          type: probabilistic
+          param: 0.2
+        - service: email-service
+          type: probabilistic
+          param: 0.15
+
+  # Agent Configuration
+  agent:
+    strategy: DaemonSet
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 250m
+        memory: 256Mi
+
+  # Collector Configuration
+  collector:
+    replicas: 3
+    autoscaling:
+      enabled: true
+      minReplicas: 3
+      maxReplicas: 10
+      targetCPUUtilizationPercentage: 80
+    resources:
+      limits:
+        cpu: "1"
+        memory: 2Gi
+      requests:
+        cpu: 500m
+        memory: 1Gi
+
+  # Query Service Configuration
+  query:
+    replicas: 2
+    resources:
+      limits:
+        cpu: 500m
+        memory: 1Gi
+      requests:
+        cpu: 250m
+        memory: 512Mi
+
+  # UI Configuration
+  ui:
+    options:
+      dependencies:
+        menuEnabled: true
+        dagMaxNumServices: 200
+      tracking:
+        gaID: email-platform-tracing
+      menu:
+        - label: API Gateway
+          url: /search?service=api-gateway
+        - label: Email Service
+          url: /search?service=email-service
+        - label: Context Engine
+          url: /search?service=context-engine
+        - label: Response Generator
+          url: /search?service=response-generator
+
+  # Security Configuration
+  security:
+    tls:
+      enabled: true
+      cert_manager: true
+      certificates:
+        issuer: letsencrypt-prod
+        duration: 2160h
+        renewBefore: 360h
+    authentication:
+      enabled: true
+      type: oauth2-proxy
+      options:
+        provider: keycloak
+        clientID: jaeger-ui
+        scope: openid profile email
+    authorization:
+      enabled: true
+      rbac: true
+      roles:
+        - jaeger-viewer
+        - jaeger-admin
+
+  # Monitoring Configuration
+  monitoring:
+    metrics:
+      enabled: true
+      prometheus:
+        scrape: true
+        port: 14269
+        path: /metrics
+    healthCheck:
+      liveness:
+        path: /health
+        port: 14269
+        initialDelaySeconds: 5
+        periodSeconds: 15
+      readiness:
+        path: /ready
+        port: 14269
+        initialDelaySeconds: 5
+        periodSeconds: 15
