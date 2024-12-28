@@ -1,0 +1,226 @@
+---
+# Deployment configuration for Response Generator service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: response-generator
+  namespace: ai-email-platform
+  labels:
+    app: response-generator
+    component: email-platform
+    tier: backend
+    environment: ${ENV}
+    version: ${VERSION}
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9090"
+    prometheus.io/path: "/metrics"
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  selector:
+    matchLabels:
+      app: response-generator
+  template:
+    metadata:
+      labels:
+        app: response-generator
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 2000
+      containers:
+        - name: response-generator
+          image: response-generator:${VERSION}
+          imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: "2"
+              memory: "4Gi"
+            limits:
+              cpu: "4"
+              memory: "8Gi"
+          ports:
+            - containerPort: 8000
+              protocol: TCP
+              name: http
+            - containerPort: 9090
+              protocol: TCP
+              name: metrics
+          envFrom:
+            - configMapRef:
+                name: response-generator-config
+            - secretRef:
+                name: response-generator-secrets
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 2
+          startupProbe:
+            httpGet:
+              path: /startup
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 30
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: cache
+              mountPath: /cache
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: cache
+          emptyDir: {}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - response-generator
+                topologyKey: kubernetes.io/hostname
+
+---
+# Service configuration for Response Generator
+apiVersion: v1
+kind: Service
+metadata:
+  name: response-generator-service
+  namespace: ai-email-platform
+  labels:
+    app: response-generator
+    component: email-platform
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9090"
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8000
+      targetPort: 8000
+      protocol: TCP
+      name: http
+    - port: 9090
+      targetPort: 9090
+      protocol: TCP
+      name: metrics
+  selector:
+    app: response-generator
+
+---
+# HorizontalPodAutoscaler configuration for Response Generator
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: response-generator-hpa
+  namespace: ai-email-platform
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: response-generator
+  minReplicas: 3
+  maxReplicas: 12
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+        - type: Pods
+          value: 2
+          periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 60
+
+---
+# Network Policy for Response Generator
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: response-generator-network-policy
+  namespace: ai-email-platform
+spec:
+  podSelector:
+    matchLabels:
+      app: response-generator
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: api-gateway
+        - podSelector:
+            matchLabels:
+              app: monitoring-tools
+      ports:
+        - protocol: TCP
+          port: 8000
+        - protocol: TCP
+          port: 9090
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: mongodb-service
+        - podSelector:
+            matchLabels:
+              app: redis-service
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 169.254.0.0/16
+              - 172.16.0.0/12
+    ports:
+      - protocol: TCP
+        port: 27017  # MongoDB
+      - protocol: TCP
+        port: 6379   # Redis
+      - protocol: TCP
+        port: 443    # HTTPS for OpenAI API
