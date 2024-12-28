@@ -1,0 +1,223 @@
+syntax = "proto3";
+
+package context.v1;
+
+option go_package = "github.com/email-management-platform/backend/shared/proto/context";
+
+// Import standard protobuf types
+// @version 3.0.0
+import "google/protobuf/timestamp.proto";
+// @version 3.0.0
+import "google/protobuf/empty.proto";
+// Import email message structure
+import "../proto/email.proto";
+
+// Context represents a comprehensive email context with enhanced tracking and versioning
+message Context {
+    // Unique identifier for the context
+    string context_id = 1;
+    
+    // Associated email identifier
+    string email_id = 2;
+    
+    // Thread identifier for context grouping
+    string thread_id = 3;
+    
+    // Project-related contexts
+    repeated ProjectContext project_contexts = 4;
+    
+    // Relationship-related contexts
+    repeated RelationshipContext relationship_contexts = 5;
+    
+    // Identified topics from content analysis
+    repeated string topics = 6;
+    
+    // Confidence score of context analysis
+    float confidence_score = 7;
+    
+    // Timestamp of analysis
+    google.protobuf.Timestamp analyzed_at = 8;
+    
+    // Additional metadata
+    map<string, string> metadata = 9;
+    
+    // Priority level of the context
+    int32 priority_level = 10;
+    
+    // Last update timestamp
+    google.protobuf.Timestamp last_updated_at = 11;
+    
+    // Version number for optimistic locking
+    int64 version = 12;
+}
+
+// ProjectContext represents project-related context with timeline tracking
+message ProjectContext {
+    // Unique project identifier
+    string project_id = 1;
+    
+    // Project name
+    string project_name = 2;
+    
+    // Current project status
+    ProjectStatus status = 3;
+    
+    // Relevance score to the email
+    float relevance_score = 4;
+    
+    // Key terms associated with the project
+    repeated string key_terms = 5;
+    
+    // Project-specific attributes
+    map<string, string> attributes = 6;
+    
+    // Project deadline
+    google.protobuf.Timestamp deadline = 7;
+    
+    // Project priority score
+    float priority_score = 8;
+}
+
+// RelationshipContext represents relationship mapping with communication preferences
+message RelationshipContext {
+    // Unique person identifier
+    string person_id = 1;
+    
+    // Email address of the person
+    string email_address = 2;
+    
+    // Full name of the person
+    string name = 3;
+    
+    // Type of relationship
+    RelationshipType type = 4;
+    
+    // Frequency of interactions
+    float interaction_frequency = 5;
+    
+    // Last interaction timestamp
+    google.protobuf.Timestamp last_interaction = 6;
+    
+    // Sentiment analysis metrics
+    map<string, float> sentiment_metrics = 7;
+    
+    // Communication preferences
+    map<string, string> communication_preferences = 8;
+    
+    // Availability windows
+    repeated TimeWindow availability_windows = 9;
+}
+
+// TimeWindow represents a time period for availability
+message TimeWindow {
+    // Start time of availability
+    google.protobuf.Timestamp start_time = 1;
+    
+    // End time of availability
+    google.protobuf.Timestamp end_time = 2;
+    
+    // Time zone identifier
+    string timezone = 3;
+}
+
+// ProjectStatus defines possible states of a project
+enum ProjectStatus {
+    PROJECT_STATUS_UNSPECIFIED = 0;
+    PROJECT_STATUS_ACTIVE = 1;
+    PROJECT_STATUS_COMPLETED = 2;
+    PROJECT_STATUS_ON_HOLD = 3;
+    PROJECT_STATUS_ARCHIVED = 4;
+}
+
+// RelationshipType defines types of relationships
+enum RelationshipType {
+    RELATIONSHIP_TYPE_UNSPECIFIED = 0;
+    RELATIONSHIP_TYPE_TEAM_MEMBER = 1;
+    RELATIONSHIP_TYPE_STAKEHOLDER = 2;
+    RELATIONSHIP_TYPE_CLIENT = 3;
+    RELATIONSHIP_TYPE_VENDOR = 4;
+}
+
+// Request message for analyzing context
+message AnalyzeContextRequest {
+    // Email message to analyze
+    email.v1.EmailMessage email = 1;
+    
+    // Analysis options
+    AnalysisOptions options = 2;
+}
+
+// Analysis options for context generation
+message AnalysisOptions {
+    // Enable deep analysis
+    bool deep_analysis = 1;
+    
+    // Include historical context
+    bool include_history = 2;
+    
+    // Minimum confidence threshold
+    float min_confidence = 3;
+    
+    // Maximum relationships to analyze
+    int32 max_relationships = 4;
+}
+
+// Request message for getting context
+message GetContextRequest {
+    // Context identifier
+    string context_id = 1;
+}
+
+// Request message for listing contexts
+message ListContextsRequest {
+    // Email identifier
+    string email_id = 1;
+    
+    // Thread identifier
+    string thread_id = 2;
+    
+    // Page size for pagination
+    int32 page_size = 3;
+    
+    // Page token for pagination
+    string page_token = 4;
+}
+
+// Response message for listing contexts
+message ListContextsResponse {
+    // List of contexts
+    repeated Context contexts = 1;
+    
+    // Next page token
+    string next_page_token = 2;
+    
+    // Total count of contexts
+    int32 total_count = 3;
+}
+
+// Request message for updating context
+message UpdateContextRequest {
+    // Context to update
+    Context context = 1;
+    
+    // Fields to update
+    repeated string update_mask = 2;
+}
+
+// ContextService defines the gRPC service for context operations
+service ContextService {
+    // Analyze context for an email
+    rpc AnalyzeContext(AnalyzeContextRequest) returns (Context) {}
+    
+    // Get a single context by ID
+    rpc GetContext(GetContextRequest) returns (Context) {}
+    
+    // List contexts with filtering
+    rpc ListContexts(ListContextsRequest) returns (ListContextsResponse) {}
+    
+    // Update existing context
+    rpc UpdateContext(UpdateContextRequest) returns (Context) {}
+    
+    // Delete context
+    rpc DeleteContext(GetContextRequest) returns (google.protobuf.Empty) {}
+}
