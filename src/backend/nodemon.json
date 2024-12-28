@@ -1,0 +1,26 @@
+{
+  "watch": [
+    "api-gateway/src/**/*.ts",
+    "auth-service/src/**/*.ts",
+    "shared/**/*.ts"
+  ],
+  "ext": "ts,json",
+  "ignore": [
+    "**/test/**",
+    "**/dist/**",
+    "node_modules/**"
+  ],
+  "exec": "ts-node -r tsconfig-paths/register",
+  "verbose": true,
+  "delay": 1000,
+  "env": {
+    "NODE_ENV": "development",
+    "TS_NODE_PROJECT": "./tsconfig.json"
+  },
+  "events": {
+    "restart": "echo 'App restarted due to changes'"
+  },
+  "restartable": "rs",
+  "legacyWatch": false,
+  "signal": "SIGTERM"
+}
