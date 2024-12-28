@@ -1,0 +1,194 @@
+name: Infrastructure Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+        required: true
+      auto_approve:
+        description: 'Auto-approve changes'
+        type: boolean
+        default: false
+  push:
+    branches:
+      - main
+    paths:
+      - 'infrastructure/**'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'infrastructure/**'
+
+# Permissions required for OIDC authentication and security scanning
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+  security-events: write
+
+# Prevent concurrent deployments for the same environment
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.inputs.environment || 'dev' }}
+  cancel-in-progress: false
+
+env:
+  TERRAFORM_VERSION: '1.6.0'
+  AWS_REGION: 'us-west-2'
+  SECURITY_SCAN_ENABLED: 'true'
+  DEPLOYMENT_TIMEOUT: '30m'
+
+jobs:
+  security_scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: 'hcl'
+          config-file: ./.github/codeql/config.yml
+
+      - name: Run security scan
+        uses: github/codeql-action/analyze@v2
+        with:
+          category: '/language:hcl'
+
+      - name: Run tfsec
+        run: |
+          curl -sSLo ./tfsec https://github.com/aquasecurity/tfsec/releases/latest/download/tfsec-linux-amd64
+          chmod +x ./tfsec
+          ./tfsec ./infrastructure/terraform --format=sarif --out=tfsec.sarif
+
+      - name: Upload security results
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: tfsec.sarif
+          category: 'tfsec'
+
+  validate:
+    name: Validate Infrastructure
+    needs: security_scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+          terraform_wrapper: false
+
+      - name: Initialize Terraform
+        run: |
+          chmod +x ./infrastructure/scripts/init-terraform.sh
+          ./infrastructure/scripts/init-terraform.sh ${{ github.event.inputs.environment || 'dev' }}
+
+      - name: Validate Terraform Configuration
+        run: |
+          cd infrastructure/terraform
+          terraform validate
+          terraform fmt -check -recursive
+
+  plan:
+    name: Generate Plan
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+      - name: Generate Terraform Plan
+        run: |
+          chmod +x ./infrastructure/scripts/apply-terraform.sh
+          ./infrastructure/scripts/apply-terraform.sh ${{ github.event.inputs.environment || 'dev' }} plan
+        env:
+          TF_WORKSPACE: ${{ github.event.inputs.environment || 'dev' }}
+
+      - name: Save Plan Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: terraform-plan
+          path: /tmp/terraform.plan
+          retention-days: 1
+
+  deploy:
+    name: Deploy Infrastructure
+    needs: plan
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.event.inputs.environment || 'dev' }}
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+      - name: Download Plan Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: terraform-plan
+          path: /tmp
+
+      - name: Apply Infrastructure Changes
+        run: |
+          chmod +x ./infrastructure/scripts/apply-terraform.sh
+          ./infrastructure/scripts/apply-terraform.sh ${{ github.event.inputs.environment || 'dev' }} apply
+        env:
+          TF_WORKSPACE: ${{ github.event.inputs.environment || 'dev' }}
+          AUTO_APPROVE: ${{ github.event.inputs.auto_approve || 'false' }}
+          DEPLOYMENT_TIMEOUT: ${{ env.DEPLOYMENT_TIMEOUT }}
+
+      - name: Verify Deployment
+        run: |
+          # Run post-deployment health checks
+          chmod +x ./infrastructure/scripts/verify-deployment.sh
+          ./infrastructure/scripts/verify-deployment.sh ${{ github.event.inputs.environment || 'dev' }}
+
+      - name: Update Deployment Status
+        if: always()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const status = ${{ job.status == 'success' }} ? '✅ Deployment Successful' : '❌ Deployment Failed';
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.name,
+              body: `Infrastructure deployment to ${process.env.ENVIRONMENT}: ${status}`
+            });
