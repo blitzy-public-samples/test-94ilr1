@@ -1,0 +1,157 @@
+# Prometheus Configuration
+# Version: 2.45.0
+# Purpose: Main configuration file for monitoring the AI-powered Email Management Platform
+# Dependencies: alert_rules.yml, recording_rules.yml
+
+global:
+  # Optimized scrape and evaluation intervals for production environment
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  scrape_timeout: 10s
+  
+  # Environment labels for metric correlation
+  external_labels:
+    environment: production
+    region: primary
+
+# Rule files for alerts and recording rules
+rule_files:
+  - "rules/recording.yml"    # Performance metric aggregations
+  - "rules/alerts.yml"       # Service and infrastructure alerts
+  - "rules/service_slos.yml" # Service level objectives
+  - "rules/performance_alerts.yml" # Performance-specific alerts
+
+# Scrape configurations for all monitored services
+scrape_configs:
+  # Kubernetes pod auto-discovery
+  - job_name: 'kubernetes-pods'
+    kubernetes_sd_configs:
+      - role: pod
+    relabel_configs:
+      # Only scrape pods with prometheus.io/scrape=true annotation
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+        action: keep
+        regex: true
+      # Allow custom metrics paths through annotations
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+        action: replace
+        target_label: __metrics_path__
+        regex: (.+)
+      # Set service label from pod name
+      - source_labels: [__meta_kubernetes_pod_name]
+        action: replace
+        target_label: service
+      # Add namespace label
+      - source_labels: [__meta_kubernetes_namespace]
+        action: replace
+        target_label: kubernetes_namespace
+
+  # API Gateway metrics (target latency <200ms)
+  - job_name: 'api-gateway'
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['api-gateway:8080']
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: 'http_request_duration_seconds.*'
+        action: keep
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+      - source_labels: [__address__]
+        target_label: service
+        replacement: api-gateway
+
+  # Email Service metrics (target processing time <2s)
+  - job_name: 'email-service'
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['email-service:8080']
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: 'email_processing_duration_seconds.*'
+        action: keep
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+      - source_labels: [__address__]
+        target_label: service
+        replacement: email-service
+
+  # Context Engine metrics (target analysis time <3s)
+  - job_name: 'context-engine'
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['context-engine:8080']
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: 'context_analysis_duration_seconds.*'
+        action: keep
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+      - source_labels: [__address__]
+        target_label: service
+        replacement: context-engine
+
+  # Response Generator metrics (target generation time <4s)
+  - job_name: 'response-generator'
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['response-generator:8080']
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: 'response_generation_duration_seconds.*'
+        action: keep
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+      - source_labels: [__address__]
+        target_label: service
+        replacement: response-generator
+
+  # Node exporter metrics for infrastructure monitoring
+  - job_name: 'node-exporter'
+    scrape_interval: 30s
+    static_configs:
+      - targets: ['node-exporter:9100']
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: 'node_(cpu|memory|disk|filesystem).*'
+        action: keep
+
+# Alert manager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['alertmanager:9093']
+      scheme: http
+      timeout: 10s
+      api_version: v2
+
+# Storage configuration for metric retention
+storage:
+  tsdb:
+    retention:
+      time: 15d    # Retain metrics for 15 days
+      size: 50GB   # Maximum storage size
+    wal:
+      retention:
+        time: 12h  # WAL retention for crash recovery
+
+# Security configuration
+tls_server_config:
+  cert_file: /etc/prometheus/certs/prometheus.crt
+  key_file: /etc/prometheus/certs/prometheus.key
+
+# Remote write configuration for long-term storage
+remote_write:
+  - url: "http://thanos-receive:19291/api/v1/receive"
+    queue_config:
+      capacity: 500
+      max_shards: 1000
+      max_samples_per_send: 100
