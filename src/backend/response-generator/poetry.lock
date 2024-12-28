@@ -1,0 +1,222 @@
+[[package]]
+name = "fastapi"
+version = "0.104.0"
+description = "FastAPI framework, high performance, easy to learn, fast to code, ready for production"
+category = "main"
+optional = false
+python-versions = ">=3.11"
+files = [
+    {file = "fastapi-0.104.0-py3-none-any.whl", hash = "sha256:exact_hash"},
+    {file = "fastapi-0.104.0.tar.gz", hash = "sha256:exact_hash"}
+]
+
+[package.dependencies]
+pydantic = ">=2.4.2"
+starlette = ">=0.27.0"
+
+[[package]]
+name = "torch"
+version = "2.1.0"
+description = "PyTorch machine learning framework"
+category = "main"
+optional = false
+python-versions = ">=3.11"
+files = [
+    {file = "torch-2.1.0-cp311-none-linux_x86_64.whl", hash = "sha256:exact_hash"}
+]
+
+[package.dependencies]
+numpy = ">=1.21.0"
+typing-extensions = "*"
+
+[[package]]
+name = "transformers"
+version = "4.34.0"
+description = "State-of-the-art Machine Learning for JAX, PyTorch and TensorFlow"
+category = "main"
+optional = false
+python-versions = ">=3.11"
+files = [
+    {file = "transformers-4.34.0-py3-none-any.whl", hash = "sha256:exact_hash"}
+]
+
+[package.dependencies]
+torch = ">=2.1.0"
+tokenizers = ">=0.14.0"
+
+[[package]]
+name = "uvicorn"
+version = "0.23.2"
+description = "Lightning-fast ASGI server implementation"
+category = "main"
+optional = false
+python-versions = ">=3.11"
+files = [
+    {file = "uvicorn-0.23.2-py3-none-any.whl", hash = "sha256:exact_hash"}
+]
+
+[package.dependencies]
+click = ">=7.0"
+h11 = ">=0.8"
+
+[[package]]
+name = "python-jose"
+version = "3.3.0"
+description = "JOSE implementation in Python"
+category = "main"
+optional = false
+python-versions = ">=3.11"
+files = [
+    {file = "python-jose-3.3.0.tar.gz", hash = "sha256:exact_hash"}
+]
+
+[package.dependencies]
+cryptography = ">=3.4.0"
+ecdsa = ">=0.16.0"
+
+[[package]]
+name = "sqlalchemy"
+version = "2.0.22"
+description = "Database Abstraction Library"
+category = "main"
+optional = false
+python-versions = ">=3.11"
+files = [
+    {file = "SQLAlchemy-2.0.22-cp311-cp311-linux_x86_64.whl", hash = "sha256:exact_hash"}
+]
+
+[package.dependencies]
+typing-extensions = ">=4.2.0"
+greenlet = ">=2.0.0"
+
+[[package]]
+name = "prometheus-client"
+version = "0.17.1"
+description = "Python client for the Prometheus monitoring system"
+category = "main"
+optional = false
+python-versions = ">=3.11"
+files = [
+    {file = "prometheus_client-0.17.1-py3-none-any.whl", hash = "sha256:exact_hash"}
+]
+
+[[package]]
+name = "opentelemetry-api"
+version = "1.20.0"
+description = "OpenTelemetry Python API"
+category = "main"
+optional = false
+python-versions = ">=3.11"
+files = [
+    {file = "opentelemetry_api-1.20.0-py3-none-any.whl", hash = "sha256:exact_hash"}
+]
+
+[package.dependencies]
+deprecated = ">=1.2.13"
+typing-extensions = ">=4.0.0"
+
+[[package]]
+name = "redis"
+version = "5.0.1"
+description = "Python client for Redis database and key-value store"
+category = "main"
+optional = false
+python-versions = ">=3.11"
+files = [
+    {file = "redis-5.0.1-py3-none-any.whl", hash = "sha256:exact_hash"}
+]
+
+[package.dependencies]
+async-timeout = ">=4.0.3"
+
+# Development Dependencies
+
+[[package]]
+name = "pytest"
+version = "7.4.2"
+description = "pytest: simple powerful testing with Python"
+category = "dev"
+optional = false
+python-versions = ">=3.11"
+files = [
+    {file = "pytest-7.4.2-py3-none-any.whl", hash = "sha256:exact_hash"}
+]
+
+[package.dependencies]
+iniconfig = "*"
+packaging = "*"
+
+[[package]]
+name = "pytest-asyncio"
+version = "0.21.1"
+description = "Pytest support for asyncio"
+category = "dev"
+optional = false
+python-versions = ">=3.11"
+files = [
+    {file = "pytest-asyncio-0.21.1-py3-none-any.whl", hash = "sha256:exact_hash"}
+]
+
+[package.dependencies]
+pytest = ">=7.0.0"
+
+[[package]]
+name = "black"
+version = "23.9.1"
+description = "The uncompromising code formatter"
+category = "dev"
+optional = false
+python-versions = ">=3.11"
+files = [
+    {file = "black-23.9.1-py3-none-any.whl", hash = "sha256:exact_hash"}
+]
+
+[package.dependencies]
+click = ">=8.0.0"
+mypy-extensions = ">=0.4.3"
+
+[[package]]
+name = "isort"
+version = "5.12.0"
+description = "A Python utility / library to sort Python imports"
+category = "dev"
+optional = false
+python-versions = ">=3.11"
+files = [
+    {file = "isort-5.12.0-py3-none-any.whl", hash = "sha256:exact_hash"}
+]
+
+[[package]]
+name = "flake8"
+version = "6.1.0"
+description = "the modular source code checker: pep8 pyflakes and co"
+category = "dev"
+optional = false
+python-versions = ">=3.11"
+files = [
+    {file = "flake8-6.1.0-py3-none-any.whl", hash = "sha256:exact_hash"}
+]
+
+[package.dependencies]
+pycodestyle = ">=2.11.0"
+pyflakes = ">=3.1.0"
+
+[[package]]
+name = "mypy"
+version = "1.5.1"
+description = "Optional static typing for Python"
+category = "dev"
+optional = false
+python-versions = ">=3.11"
+files = [
+    {file = "mypy-1.5.1-py3-none-any.whl", hash = "sha256:exact_hash"}
+]
+
+[package.dependencies]
+typing-extensions = ">=4.1.0"
+mypy-extensions = ">=1.0.0"
+
+[metadata]
+lock-version = "2.0"
+python-versions = "^3.11"
+content-hash = "sha256:exact_hash"
