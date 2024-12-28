@@ -1,0 +1,109 @@
+# Prometheus Alert Rules Configuration
+# Version: 1.0
+# Purpose: Define critical monitoring alerts for the AI-powered Email Management Platform
+# Dependencies: recording.yml (recording rules), prometheus.yml (main config)
+
+groups:
+  # Service Availability Monitoring
+  - name: service_availability
+    rules:
+      - alert: ServiceDown
+        expr: up == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Service {{ $labels.service }} is down"
+          description: "Service {{ $labels.service }} has been down for more than 5 minutes"
+
+  # API Gateway Alerts
+  - name: api_gateway_alerts
+    rules:
+      - alert: HighErrorRate
+        expr: api:error_rate:ratio > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          service: api-gateway
+        annotations:
+          summary: "High API error rate detected"
+          description: "API Gateway error rate is above 5% for route {{ $labels.route }}"
+
+      - alert: HighLatency
+        expr: api:request_duration:p95 > 0.2
+        for: 5m
+        labels:
+          severity: warning
+          service: api-gateway
+        annotations:
+          summary: "High API latency detected"
+          description: "95th percentile latency is above 200ms for route {{ $labels.route }}"
+
+  # Email Service Alerts
+  - name: email_service_alerts
+    rules:
+      - alert: EmailProcessingErrors
+        expr: email:error_rate:ratio > 0.01
+        for: 5m
+        labels:
+          severity: critical
+          service: email-service
+        annotations:
+          summary: "High email processing error rate"
+          description: "Email processing error rate is above 1%"
+
+  # Context Engine Alerts
+  - name: context_engine_alerts
+    rules:
+      - alert: LowContextAccuracy
+        expr: context:accuracy:ratio < 0.95
+        for: 15m
+        labels:
+          severity: warning
+          service: context-engine
+        annotations:
+          summary: "Low context analysis accuracy"
+          description: "Context analysis accuracy has dropped below 95%"
+
+  # Response Generator Alerts
+  - name: response_generator_alerts
+    rules:
+      - alert: HighResponseErrors
+        expr: response:error_rate:ratio > 0.01
+        for: 5m
+        labels:
+          severity: critical
+          service: response-generator
+        annotations:
+          summary: "High response generation error rate"
+          description: "Response generation error rate is above 1%"
+
+  # Infrastructure Alerts
+  - name: infrastructure_alerts
+    rules:
+      - alert: HighCPUUsage
+        expr: node:cpu_usage:percent > 80
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage on {{ $labels.instance }}"
+          description: "CPU usage is above 80% for more than 10 minutes"
+
+      - alert: HighMemoryUsage
+        expr: node:memory_usage:percent > 85
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage on {{ $labels.instance }}"
+          description: "Memory usage is above 85% for more than 10 minutes"
+
+      - alert: HighDiskUsage
+        expr: node:disk_usage:percent > 85
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High disk usage on {{ $labels.instance }}"
+          description: "Disk usage is above 85% for more than 10 minutes"
