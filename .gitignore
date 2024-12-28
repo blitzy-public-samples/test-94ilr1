@@ -1,0 +1,162 @@
+# Dependencies
+node_modules/
+vendor/
+poetry.lock
+package-lock.json
+yarn.lock
+go.sum
+pip-log.txt
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build and Compilation
+dist/
+build/
+*.pyc
+*.pyo
+__pycache__/
+*.so
+*.exe
+*.dll
+*.class
+*.o
+*.a
+*.lib
+*.dylib
+*.out
+
+# Environment and Configuration
+.env
+.env.*
+!.env.example
+*.local
+config.local.js
+*.local.yml
+config.dev.js
+config.prod.js
+config.staging.js
+database.config.*
+appsettings.*.json
+secrets.yml
+credentials.json
+
+# IDE and Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+.project
+.classpath
+.settings/
+*.sublime-*
+.atom/
+.vim/
+
+# Testing and Coverage
+coverage/
+.nyc_output/
+junit.xml
+test-results/
+cypress/videos/
+cypress/screenshots/
+.coverage
+htmlcov/
+.pytest_cache/
+*.coverage
+nosetests.xml
+.testmondata
+
+# Logs and Temporary
+*.log
+logs/
+temp/
+tmp/
+*.tmp
+*.bak
+*.swp
+*.dump
+dump.rdb
+
+# Infrastructure
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!terraform.tfvars
+.terraformrc
+terraform.rc
+docker-compose.override.yml
+.docker/
+volumes/
+*.pem
+kubeconfig
+.kube/
+*.tfplan
+ansible/*.retry
+.vagrant/
+
+# Security and Certificates
+*.key
+*.crt
+*.csr
+*.cer
+*.der
+*.priv
+*.p12
+*.pfx
+*.keystore
+*.jks
+*.truststore
+id_rsa*
+known_hosts
+.gnupg/
+.ssh/
+security-audit.json
+vulnerability-report.json
+auth.json
+credentials.yml
+
+# Service Specific
+src/backend/bin/
+src/web/.cache/
+src/web/.next/
+src/web/storybook-static/
+*.generated.*
+generated/
+swagger.json
+openapi.json
+schema.graphql
+
+# Project Specific
+# Email Service
+src/backend/email-service/tmp/
+src/backend/email-service/logs/
+
+# Context Engine
+src/backend/context-engine/models/
+src/backend/context-engine/data/
+
+# Response Generator
+src/backend/response-generator/models/
+src/backend/response-generator/templates/
+
+# Frontend
+src/web/.env.local
+src/web/.env.development.local
+src/web/.env.test.local
+src/web/.env.production.local
+src/web/public/uploads/
+
+# Documentation
+docs/_build/
+docs/api/generated/
+docs/coverage/
+
+# Monitoring and Metrics
+monitoring/grafana/data/
+monitoring/prometheus/data/
+monitoring/elasticsearch/data/
