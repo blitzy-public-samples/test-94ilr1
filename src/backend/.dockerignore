@@ -1,0 +1,81 @@
+node_modules
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+
+# Environment and secrets
+.env
+.env.*
+
+# Logs
+*.log
+logs/
+
+# Version control
+.git
+.gitignore
+
+# Documentation
+README.md
+
+# Docker files
+Dockerfile
+docker-compose*.yml
+
+# Test files and directories
+tests/
+*_test.go
+*.test
+coverage/
+.coverage
+htmlcov/
+.pytest_cache/
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Build artifacts
+dist/
+build/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Cache directories
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# Development tools
+.eslintrc*
+.prettier*
+.editorconfig
+tox.ini
+pyproject.toml
+setup.cfg
+
+# Temporary files
+*.tmp
+*.temp
+*~
+
+# Debug files
+.debug/
+debug.log
+
+# Local development configurations
+config.local.yaml
+*.local.json
+
+# Backup files
+*.bak
+*.backup
+*#
