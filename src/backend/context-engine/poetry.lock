@@ -1,0 +1,180 @@
+[[package]]
+name = "fastapi"
+version = "0.104.0"
+description = "FastAPI framework, high performance, easy to learn, fast to code, ready for production"
+category = "main"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "fastapi-0.104.0-py3-none-any.whl", hash = "sha256:a80485c0c6a8677d5a0eb15e69ee426c05efee4537e83eabf40216159b1dc96c"},
+    {file = "fastapi-0.104.0.tar.gz", hash = "sha256:583aa2ada0ff827afb2c69dd576cd3a03963c0bf3fa6c1415f5ddc367b2cf1c4"}
+]
+
+[package.dependencies]
+pydantic = ">=2.4.0,<3.0.0"
+starlette = ">=0.27.0,<0.28.0"
+
+[[package]]
+name = "tensorflow"
+version = "2.14.0"
+description = "TensorFlow is an open source machine learning framework for everyone."
+category = "main"
+optional = false
+python-versions = ">=3.9"
+files = [
+    {file = "tensorflow-2.14.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:2a1e0c2e6f9c5c63c41b625d0d45a9aac12e89b9adf81f1f8fae5f0c5875f41c"}
+]
+
+[package.dependencies]
+numpy = ">=1.22,<2.0"
+protobuf = ">=3.20.3,<5.0.0"
+
+[[package]]
+name = "numpy"
+version = "1.24.0"
+description = "NumPy is the fundamental package for array computing with Python."
+category = "main"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "numpy-1.24.0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:c4ab7c9711fe6b235e86487ca74c1b092a6dd59a3cb45b63241ea0a148d1c0b0"}
+]
+
+[[package]]
+name = "pandas"
+version = "2.1.0"
+description = "Powerful data structures for data analysis, time series, and statistics"
+category = "main"
+optional = false
+python-versions = ">=3.9"
+files = [
+    {file = "pandas-2.1.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:44f5c5f2f2724d9a5d4c2c3c8e09eb2d5c6f629b9159c0e3eefa4c9a57f9278e"}
+]
+
+[package.dependencies]
+numpy = ">=1.23.2"
+python-dateutil = ">=2.8.2"
+pytz = ">=2020.1"
+
+[[package]]
+name = "pydantic"
+version = "2.4.0"
+description = "Data validation using Python type hints"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "pydantic-2.4.0-py3-none-any.whl", hash = "sha256:2b2ef9a7c4f6883c8000b33c9a1eadf5f80bda6b5467894d5f37f0f5d9f91f5b"}
+]
+
+[package.dependencies]
+typing-extensions = ">=4.6.1"
+
+[[package]]
+name = "uvicorn"
+version = "0.23.0"
+description = "The lightning-fast ASGI server."
+category = "main"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "uvicorn-0.23.0-py3-none-any.whl", hash = "sha256:1f9be6558f01239d4fdf22ef8126c39cb1ad0addf76c40e760549d2c2f43ab53"}
+]
+
+[package.dependencies]
+click = ">=7.0"
+h11 = ">=0.8"
+
+[[package]]
+name = "motor"
+version = "3.3.0"
+description = "Non-blocking MongoDB driver for Tornado or asyncio"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "motor-3.3.0-py3-none-any.whl", hash = "sha256:91d10825e02d205f591b3d2c5313a8d6af01f1c5f4f45dce17a2def7b1e8c505"}
+]
+
+[package.dependencies]
+pymongo = ">=4.4,<5"
+
+[[package]]
+name = "aioredis"
+version = "2.0.0"
+description = "asyncio (PEP 3156) Redis support"
+category = "main"
+optional = false
+python-versions = ">=3.6"
+files = [
+    {file = "aioredis-2.0.0-py3-none-any.whl", hash = "sha256:3ef2f3e1e0c6d58e0a9c37bc3a3a0f5d9d8b6c70f9c40710820e3f9a3d80b7c9"}
+]
+
+[package.dependencies]
+async-timeout = ">=4.0.0"
+typing-extensions = ">=3.7.4"
+
+[[package]]
+name = "prometheus-client"
+version = "0.17.0"
+description = "Python client for the Prometheus monitoring system."
+category = "main"
+optional = false
+python-versions = ">=3.6"
+files = [
+    {file = "prometheus_client-0.17.0-py3-none-any.whl", hash = "sha256:e537f37160f6807b8202a6fc4764cdd19bac5480ddd3e3502c6d0e463561db51"}
+]
+
+[[package]]
+name = "opentelemetry-api"
+version = "1.20.0"
+description = "OpenTelemetry Python API"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "opentelemetry_api-1.20.0-py3-none-any.whl", hash = "sha256:f4d8a7d5a1a8f3d64d8957e09e9c14c4c8a2c89c9020f2e4f4c7b4e589c3e9e2"}
+]
+
+[package.dependencies]
+deprecated = ">=1.2.6"
+typing-extensions = ">=3.7.4"
+
+[[package]]
+name = "opentelemetry-sdk"
+version = "1.20.0"
+description = "OpenTelemetry Python SDK"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "opentelemetry_sdk-1.20.0-py3-none-any.whl", hash = "sha256:8c8b7f9c5a39e0df3b2a8d8847f957a8b7c4f6f5e7cfa5b0f4f17b0a8d62a4f6"}
+]
+
+[package.dependencies]
+opentelemetry-api = "1.20.0"
+typing-extensions = ">=3.7.4"
+
+[[package]]
+name = "python-jose"
+version = "3.3.0"
+description = "JOSE implementation in Python"
+category = "main"
+optional = false
+python-versions = "*"
+files = [
+    {file = "python-jose-3.3.0.tar.gz", hash = "sha256:55779b5e6ad599c6336191246e95eb2293a9ddebd555f796a65f838f07e5d78a"}
+]
+
+[package.dependencies]
+ecdsa = "!=0.15"
+pyasn1 = "*"
+rsa = "*"
+
+[metadata]
+lock-version = "2.0"
+python-versions = "^3.11"
+content-hash = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+
+[metadata.files]
+# Additional package files and hashes would be listed here
