@@ -1,0 +1,57 @@
+{
+  "name": "@backend/auth-service",
+  "version": "1.0.0",
+  "description": "Authentication service with Auth0 integration and comprehensive security measures for the AI Email Management Platform",
+  "main": "dist/main.js",
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=9.0.0"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/main.js",
+    "dev": "nodemon src/main.ts",
+    "test": "jest --coverage",
+    "lint": "eslint src/**/*.ts",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "auth0": "^4.0.0",
+    "compression": "^1.7.4",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.1.0",
+    "helmet": "^7.1.0",
+    "http-status": "^1.6.0",
+    "ioredis": "^5.0.0",
+    "jsonwebtoken": "^9.0.0",
+    "jwks-rsa": "^3.1.0",
+    "rate-limit-redis": "^4.0.0",
+    "rate-limiter-flexible": "^2.4.1",
+    "redis": "^5.0.1",
+    "winston": "^3.11.0",
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "@jest/globals": "^29.7.0",
+    "@types/express": "^4.17.21",
+    "@types/jest": "^29.5.0",
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0",
+    "husky": "^8.0.0",
+    "ioredis-mock": "^8.9.0",
+    "jest": "^29.7.0",
+    "lint-staged": "^15.0.0",
+    "nock": "^13.3.8",
+    "nodemon": "^3.0.1",
+    "prettier": "^3.0.0",
+    "rimraf": "^5.0.0",
+    "supertest": "^6.3.3",
+    "ts-jest": "^29.0.0",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.0.0"
+  }
+}
