@@ -1,0 +1,1 @@
+I would like to create a platform to track my work emails and then have context on what I am working on and then auto respond to my emails when questions come up
