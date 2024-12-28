@@ -1,0 +1,91 @@
+# Prometheus Recording Rules Configuration
+# Version: 1.0
+# Purpose: Pre-compute frequently used metrics and aggregations for the AI-powered Email Management Platform
+# Dependencies: prometheus.yml (main config), alerts.yml (alert rules)
+
+groups:
+  # API Gateway Metrics
+  - name: api_gateway_metrics
+    interval: 1m
+    rules:
+      # Error rate by route (target <0.05%)
+      - record: api:error_rate:ratio
+        expr: sum(rate(http_requests_total{status=~"5.."}[5m])) by (route) / sum(rate(http_requests_total[5m])) by (route)
+        labels:
+          service: api-gateway
+      
+      # 95th percentile latency by route (target <200ms)
+      - record: api:request_duration:p95
+        expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, route))
+        labels:
+          service: api-gateway
+
+  # Email Service Metrics
+  - name: email_service_metrics
+    interval: 1m
+    rules:
+      # Email processing error rate (target <0.1%)
+      - record: email:error_rate:ratio
+        expr: sum(rate(email_processing_errors_total[5m])) / sum(rate(email_processing_total[5m]))
+        labels:
+          service: email-service
+      
+      # 95th percentile email processing duration (target <2s)
+      - record: email:processing_duration:p95
+        expr: histogram_quantile(0.95, sum(rate(email_processing_duration_seconds_bucket[5m])) by (le))
+        labels:
+          service: email-service
+
+  # Context Engine Metrics
+  - name: context_engine_metrics
+    interval: 1m
+    rules:
+      # Context analysis accuracy (target 95%)
+      - record: context:accuracy:ratio
+        expr: sum(rate(context_analysis_correct_total[15m])) / sum(rate(context_analysis_total[15m]))
+        labels:
+          service: context-engine
+      
+      # 95th percentile context analysis duration (target <3s)
+      - record: context:analysis_duration:p95
+        expr: histogram_quantile(0.95, sum(rate(context_analysis_duration_seconds_bucket[5m])) by (le))
+        labels:
+          service: context-engine
+
+  # Response Generator Metrics
+  - name: response_generator_metrics
+    interval: 1m
+    rules:
+      # Response generation error rate (target <1.0%)
+      - record: response:error_rate:ratio
+        expr: sum(rate(response_generation_errors_total[5m])) / sum(rate(response_generation_total[5m]))
+        labels:
+          service: response-generator
+      
+      # 95th percentile response generation duration (target <4s)
+      - record: response:generation_duration:p95
+        expr: histogram_quantile(0.95, sum(rate(response_generation_duration_seconds_bucket[5m])) by (le))
+        labels:
+          service: response-generator
+
+  # Infrastructure Metrics
+  - name: infrastructure_metrics
+    interval: 2m
+    rules:
+      # CPU usage percentage by instance
+      - record: node:cpu_usage:percent
+        expr: 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)
+        labels:
+          metric: cpu
+      
+      # Memory usage percentage by instance
+      - record: node:memory_usage:percent
+        expr: 100 * (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)
+        labels:
+          metric: memory
+      
+      # Disk usage percentage by instance
+      - record: node:disk_usage:percent
+        expr: 100 * (1 - node_filesystem_avail_bytes / node_filesystem_size_bytes)
+        labels:
+          metric: disk
