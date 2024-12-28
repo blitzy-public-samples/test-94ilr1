@@ -1,0 +1,289 @@
+syntax = "proto3";
+
+package email.v1;
+
+option go_package = "github.com/email-management-platform/backend/shared/proto/email";
+
+// Import standard protobuf types
+// @version 3.0.0
+import "google/protobuf/timestamp.proto";
+// @version 3.0.0
+import "google/protobuf/empty.proto";
+
+// EmailMessage represents a comprehensive email message with enhanced metadata and threading support
+message EmailMessage {
+    // Unique identifier for the email message
+    string message_id = 1;
+    
+    // Thread identifier for grouping related messages
+    string thread_id = 2;
+    
+    // Account identifier associated with the email
+    string account_id = 3;
+    
+    // Email subject line
+    string subject = 4;
+    
+    // Email content/body
+    string content = 5;
+    
+    // Sender's email address
+    string from_address = 6;
+    
+    // List of primary recipient email addresses
+    repeated string to_addresses = 7;
+    
+    // List of carbon copy recipient email addresses
+    repeated string cc_addresses = 8;
+    
+    // List of blind carbon copy recipient email addresses
+    repeated string bcc_addresses = 9;
+    
+    // List of email attachments
+    repeated Attachment attachments = 10;
+    
+    // Email priority level
+    EmailPriority priority = 11;
+    
+    // Current status of the email
+    EmailStatus status = 12;
+    
+    // Timestamp when the email was sent
+    google.protobuf.Timestamp sent_at = 13;
+    
+    // Timestamp when the email was received
+    google.protobuf.Timestamp received_at = 14;
+    
+    // Email headers as key-value pairs
+    map<string, string> headers = 15;
+    
+    // Custom metadata as key-value pairs
+    map<string, string> metadata = 16;
+    
+    // Email labels/tags
+    repeated string labels = 17;
+    
+    // Email folder location
+    string folder_path = 18;
+    
+    // Indicates if email is part of a thread
+    bool has_thread = 19;
+    
+    // Position in thread if part of one
+    int32 thread_position = 20;
+    
+    // Unique identifier for conversation grouping
+    string conversation_id = 21;
+    
+    // Indicates if email is a draft
+    bool is_draft = 22;
+    
+    // Importance level of the email
+    EmailImportance importance_level = 23;
+}
+
+// Attachment represents an email attachment with enhanced metadata
+message Attachment {
+    // Unique identifier for the attachment
+    string attachment_id = 1;
+    
+    // Original filename of the attachment
+    string filename = 2;
+    
+    // MIME type of the attachment
+    string content_type = 3;
+    
+    // Size of attachment in bytes
+    int64 size_bytes = 4;
+    
+    // Storage location path
+    string storage_path = 5;
+    
+    // Checksum for integrity verification
+    string checksum = 6;
+    
+    // Indicates if attachment is inline
+    bool is_inline = 7;
+    
+    // Content ID for inline attachments
+    string content_id = 8;
+    
+    // Custom metadata for attachment
+    map<string, string> metadata = 9;
+}
+
+// EmailFilter defines comprehensive filter options for email queries
+message EmailFilter {
+    // Filter by sender address
+    string from_address = 1;
+    
+    // Filter by date range
+    DateRange date_range = 2;
+    
+    // Filter for emails with attachments
+    bool has_attachments = 3;
+    
+    // Filter by priority level
+    EmailPriority priority = 4;
+    
+    // Filter by labels
+    repeated string labels = 5;
+    
+    // Filter by folder path
+    string folder_path = 6;
+    
+    // Include draft emails in results
+    bool include_drafts = 7;
+    
+    // Filter by thread ID
+    string thread_id = 8;
+    
+    // Filter by conversation ID
+    string conversation_id = 9;
+    
+    // Filter by keywords
+    repeated string keywords = 10;
+    
+    // Enable full text search
+    bool full_text_search = 11;
+}
+
+// DateRange represents a time period for filtering
+message DateRange {
+    // Start of date range
+    google.protobuf.Timestamp start_time = 1;
+    
+    // End of date range
+    google.protobuf.Timestamp end_time = 2;
+}
+
+// EmailPriority defines the priority levels for emails
+enum EmailPriority {
+    PRIORITY_UNSPECIFIED = 0;
+    PRIORITY_LOW = 1;
+    PRIORITY_NORMAL = 2;
+    PRIORITY_HIGH = 3;
+}
+
+// EmailStatus defines the possible states of an email
+enum EmailStatus {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_UNREAD = 1;
+    STATUS_READ = 2;
+    STATUS_ARCHIVED = 3;
+    STATUS_DELETED = 4;
+    STATUS_SPAM = 5;
+}
+
+// EmailImportance defines the importance levels of emails
+enum EmailImportance {
+    IMPORTANCE_NORMAL = 0;
+    IMPORTANCE_HIGH = 1;
+    IMPORTANCE_URGENT = 2;
+    IMPORTANCE_LOW = 3;
+}
+
+// Request message for getting a single email
+message GetEmailRequest {
+    string message_id = 1;
+    string account_id = 2;
+}
+
+// Request message for listing emails
+message ListEmailsRequest {
+    string account_id = 1;
+    EmailFilter filter = 2;
+    int32 page_size = 3;
+    string page_token = 4;
+}
+
+// Response message for listing emails
+message ListEmailsResponse {
+    repeated EmailMessage emails = 1;
+    string next_page_token = 2;
+    int32 total_count = 3;
+}
+
+// Request message for sending an email
+message SendEmailRequest {
+    EmailMessage email = 1;
+    bool save_draft = 2;
+}
+
+// Request message for batch processing
+message BatchProcessRequest {
+    repeated string message_ids = 1;
+    string account_id = 2;
+    BatchOperation operation = 3;
+}
+
+// BatchOperation defines the type of batch operation
+enum BatchOperation {
+    OPERATION_UNSPECIFIED = 0;
+    OPERATION_DELETE = 1;
+    OPERATION_ARCHIVE = 2;
+    OPERATION_MARK_READ = 3;
+    OPERATION_MARK_UNREAD = 4;
+    OPERATION_MOVE = 5;
+}
+
+// EmailService defines the gRPC service for email operations
+service EmailService {
+    // Get a single email by ID
+    rpc GetEmail(GetEmailRequest) returns (EmailMessage) {}
+    
+    // List emails with filtering
+    rpc ListEmails(ListEmailsRequest) returns (ListEmailsResponse) {}
+    
+    // Send a new email or save as draft
+    rpc SendEmail(SendEmailRequest) returns (EmailMessage) {}
+    
+    // Delete an email
+    rpc DeleteEmail(GetEmailRequest) returns (google.protobuf.Empty) {}
+    
+    // Update email labels
+    rpc UpdateLabels(UpdateLabelsRequest) returns (EmailMessage) {}
+    
+    // Move email to different folder
+    rpc MoveToFolder(MoveToFolderRequest) returns (EmailMessage) {}
+    
+    // Get complete email thread
+    rpc GetThread(GetThreadRequest) returns (GetThreadResponse) {}
+    
+    // Update email metadata
+    rpc UpdateMetadata(UpdateMetadataRequest) returns (EmailMessage) {}
+    
+    // Batch process multiple emails
+    rpc BatchProcess(BatchProcessRequest) returns (google.protobuf.Empty) {}
+}
+
+// Additional request/response messages for service operations
+message UpdateLabelsRequest {
+    string message_id = 1;
+    string account_id = 2;
+    repeated string labels_to_add = 3;
+    repeated string labels_to_remove = 4;
+}
+
+message MoveToFolderRequest {
+    string message_id = 1;
+    string account_id = 2;
+    string target_folder = 3;
+}
+
+message GetThreadRequest {
+    string thread_id = 1;
+    string account_id = 2;
+}
+
+message GetThreadResponse {
+    repeated EmailMessage messages = 1;
+    int32 total_messages = 2;
+    bool is_complete = 3;
+}
+
+message UpdateMetadataRequest {
+    string message_id = 1;
+    string account_id = 2;
+    map<string, string> metadata = 3;
+}
