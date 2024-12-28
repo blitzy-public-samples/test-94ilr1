@@ -1,0 +1,140 @@
+# Kibana Configuration for AI-powered Email Management Platform
+# Version: 8.10+
+# Purpose: Production configuration for visualization and monitoring platform
+
+#------------------------------------------------------------------------------
+# Server Settings
+#------------------------------------------------------------------------------
+server.name: "email-platform-kibana"
+server.host: "0.0.0.0"
+server.port: 5601
+server.maxPayloadBytes: 1048576
+server.compression.enabled: true
+
+# SSL Configuration
+server.ssl.enabled: true
+server.ssl.certificate: "/etc/kibana/certs/server.crt"
+server.ssl.key: "/etc/kibana/certs/server.key"
+server.publicBaseUrl: "https://${KIBANA_HOSTNAME}"
+
+#------------------------------------------------------------------------------
+# Elasticsearch Connection Settings
+#------------------------------------------------------------------------------
+elasticsearch.hosts: ["http://elasticsearch:9200"]
+elasticsearch.username: "${ELASTICSEARCH_USER}"
+elasticsearch.password: "${ELASTICSEARCH_PASSWORD}"
+elasticsearch.ssl.certificateAuthorities: ["/etc/kibana/certs/ca.crt"]
+elasticsearch.ssl.verificationMode: "certificate"
+elasticsearch.requestTimeout: 30000
+elasticsearch.shardTimeout: 30000
+elasticsearch.pingTimeout: 3000
+
+#------------------------------------------------------------------------------
+# Security Settings
+#------------------------------------------------------------------------------
+xpack.security.enabled: true
+xpack.security.encryptionKey: "${ENCRYPTION_KEY}"
+xpack.security.session.idleTimeout: "1h"
+xpack.security.session.lifespan: "24h"
+xpack.security.audit.enabled: true
+
+# Authentication Providers
+xpack.security.authc.providers:
+  basic.basic1:
+    order: 0
+  token.token1:
+    order: 1
+  saml.saml1:
+    order: 2
+    realm: "saml1"
+    description: "SAML Provider"
+
+xpack.security.authz.restricted_roles: ["kibana_system"]
+xpack.security.transport.ssl.enabled: true
+
+#------------------------------------------------------------------------------
+# Monitoring Settings
+#------------------------------------------------------------------------------
+xpack.monitoring.ui.container.elasticsearch.enabled: true
+xpack.monitoring.collection.enabled: true
+xpack.monitoring.collection.interval: "10s"
+xpack.monitoring.min_interval_seconds: 10
+xpack.monitoring.elasticsearch.collection.enabled: true
+xpack.monitoring.kibana.collection.enabled: true
+xpack.monitoring.max_bucket_size: 10000
+
+# Service Monitoring Configuration
+monitoring.ui.container.elasticsearch.enabled: true
+monitoring.ui.container.logstash.enabled: true
+monitoring.ui.container.kibana.enabled: true
+
+#------------------------------------------------------------------------------
+# Performance Optimization Settings
+#------------------------------------------------------------------------------
+optimization.usageCollectionAllowlist: [
+  "api-gateway",
+  "email-service",
+  "context-engine",
+  "response-generator"
+]
+optimization.watcherLimit: 5000
+optimization.indexLimit: 10000
+optimization.maxBuckets: 10000
+optimization.maxConcurrentShardRequests: 5
+optimization.maxPayloadBytes: 1048576
+
+#------------------------------------------------------------------------------
+# Logging Settings
+#------------------------------------------------------------------------------
+logging:
+  appenders:
+    file:
+      type: file
+      fileName: "/var/log/kibana/kibana.log"
+      layout:
+        type: json
+  root:
+    appenders: ["file"]
+    level: "info"
+
+#------------------------------------------------------------------------------
+# Telemetry Settings
+#------------------------------------------------------------------------------
+telemetry.enabled: false
+telemetry.allowChangingOptInStatus: false
+
+#------------------------------------------------------------------------------
+# CORS and API Settings
+#------------------------------------------------------------------------------
+server.cors.enabled: true
+server.cors.allowCredentials: true
+server.cors.allowOrigin: ["https://*.email-platform.com"]
+
+#------------------------------------------------------------------------------
+# Dashboard Settings
+#------------------------------------------------------------------------------
+dashboard.hideWriteControls: false
+dashboard.quota.defaultAppLimit: 100
+dashboard.quota.absoluteImportLimit: 10000
+
+#------------------------------------------------------------------------------
+# Integration Settings
+#------------------------------------------------------------------------------
+xpack.reporting.enabled: true
+xpack.reporting.capture.timeouts.waitForElements: 30000
+xpack.reporting.csv.maxSizeBytes: 10485760
+
+xpack.alerting.enabled: true
+xpack.actions.enabled: true
+xpack.actions.allowedHosts: ["*"]
+xpack.actions.enabledActionTypes: ["email", "webhook", "index", "slack"]
+
+#------------------------------------------------------------------------------
+# APM Integration
+#------------------------------------------------------------------------------
+apm_oss.enabled: true
+apm_oss.indexPattern: "apm-*"
+apm_oss.errorIndices: "apm-*-error-*"
+apm_oss.onboardingIndices: "apm-*-onboarding-*"
+apm_oss.spanIndices: "apm-*-span-*"
+apm_oss.transactionIndices: "apm-*-transaction-*"
