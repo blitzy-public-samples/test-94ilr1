@@ -1,0 +1,197 @@
+{
+  "name": "EmailPlatformWAF",
+  "description": "WAF configuration for AI Email Management Platform",
+  "scope": "CLOUDFRONT",
+  "default_action": {
+    "allow": {}
+  },
+  "rules": [
+    {
+      "name": "AWSManagedRulesCommonRuleSet",
+      "priority": 1,
+      "override_action": {
+        "none": {}
+      },
+      "statement": {
+        "managed_rule_group_statement": {
+          "vendor_name": "AWS",
+          "name": "AWSManagedRulesCommonRuleSet",
+          "version": "Version_1.0",
+          "excluded_rules": []
+        }
+      },
+      "visibility_config": {
+        "sampled_requests_enabled": true,
+        "cloudwatch_metrics_enabled": true,
+        "metric_name": "AWSManagedRulesCommonRuleSetMetric"
+      }
+    },
+    {
+      "name": "IPRateLimit",
+      "priority": 2,
+      "action": {
+        "block": {}
+      },
+      "statement": {
+        "rate_based_statement": {
+          "limit": 10000,
+          "aggregate_key_type": "IP"
+        }
+      },
+      "visibility_config": {
+        "sampled_requests_enabled": true,
+        "cloudwatch_metrics_enabled": true,
+        "metric_name": "IPRateLimitMetric"
+      }
+    },
+    {
+      "name": "SQLiProtection",
+      "priority": 3,
+      "override_action": {
+        "none": {}
+      },
+      "statement": {
+        "managed_rule_group_statement": {
+          "vendor_name": "AWS",
+          "name": "AWSManagedRulesSQLiRuleSet",
+          "version": "Version_1.0",
+          "excluded_rules": []
+        }
+      },
+      "visibility_config": {
+        "sampled_requests_enabled": true,
+        "cloudwatch_metrics_enabled": true,
+        "metric_name": "SQLiProtectionMetric"
+      }
+    },
+    {
+      "name": "XSSProtection",
+      "priority": 4,
+      "override_action": {
+        "none": {}
+      },
+      "statement": {
+        "managed_rule_group_statement": {
+          "vendor_name": "AWS",
+          "name": "AWSManagedRulesKnownBadInputsRuleSet",
+          "version": "Version_1.0",
+          "excluded_rules": []
+        }
+      },
+      "visibility_config": {
+        "sampled_requests_enabled": true,
+        "cloudwatch_metrics_enabled": true,
+        "metric_name": "XSSProtectionMetric"
+      }
+    },
+    {
+      "name": "GeoBlockRule",
+      "priority": 5,
+      "action": {
+        "block": {}
+      },
+      "statement": {
+        "geo_match_statement": {
+          "country_codes": ["${RESTRICTED_COUNTRIES}"]
+        }
+      },
+      "visibility_config": {
+        "sampled_requests_enabled": true,
+        "cloudwatch_metrics_enabled": true,
+        "metric_name": "GeoBlockMetric"
+      }
+    },
+    {
+      "name": "CustomHeaderProtection",
+      "priority": 6,
+      "action": {
+        "block": {}
+      },
+      "statement": {
+        "or_statement": {
+          "statements": [
+            {
+              "byte_match_statement": {
+                "search_string": "admin",
+                "positional_constraint": "CONTAINS",
+                "field_to_match": {
+                  "headers": {
+                    "match_pattern": {
+                      "all": {}
+                    }
+                  }
+                },
+                "text_transformation": [
+                  {
+                    "priority": 1,
+                    "type": "LOWERCASE"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "visibility_config": {
+        "sampled_requests_enabled": true,
+        "cloudwatch_metrics_enabled": true,
+        "metric_name": "CustomHeaderProtectionMetric"
+      }
+    }
+  ],
+  "custom_response": {
+    "blocked_request": {
+      "response_code": 403,
+      "content_type": "APPLICATION_JSON",
+      "content": {
+        "code": 403,
+        "message": "Access denied by security controls",
+        "request_id": "${REQUEST_ID}",
+        "timestamp": "${TIMESTAMP}"
+      }
+    }
+  },
+  "logging_configuration": {
+    "log_destination_configs": ["${KINESIS_FIREHOSE_ARN}"],
+    "redacted_fields": {
+      "single_header": [
+        {
+          "name": "authorization"
+        },
+        {
+          "name": "x-api-key"
+        },
+        {
+          "name": "cookie"
+        }
+      ]
+    },
+    "sampling_rate": 100,
+    "logging_filter": {
+      "filters": [
+        {
+          "behavior": "KEEP",
+          "requirement": "MEETS_ALL",
+          "conditions": [
+            {
+              "action_condition": {
+                "action": "BLOCK"
+              }
+            }
+          ]
+        }
+      ],
+      "default_behavior": "DROP"
+    }
+  },
+  "token_domains": ["${APP_DOMAIN}"],
+  "association": {
+    "resource_arn": "${CLOUDFRONT_DISTRIBUTION_ARN}",
+    "web_acl_arn": "${WAF_ACL_ARN}"
+  },
+  "tags": {
+    "Environment": "${ENVIRONMENT}",
+    "Project": "AI-Email-Platform",
+    "ManagedBy": "Terraform"
+  }
+}
