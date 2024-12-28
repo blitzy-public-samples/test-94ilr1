@@ -1,0 +1,306 @@
+version: "3.8"
+
+# Define services
+services:
+  # API Gateway Service
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+      args:
+        NODE_ENV: development
+    ports:
+      - "3000:3000"  # Main API port
+      - "9100:9100"  # Metrics port
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - METRICS_PORT=9100
+      - AUTH_SECRET=${AUTH_SECRET}
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+      email-service:
+        condition: service_healthy
+      context-engine:
+        condition: service_healthy
+      response-generator:
+        condition: service_healthy
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+    restart: unless-stopped
+
+  # Email Service
+  email-service:
+    build:
+      context: ./email-service
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"  # HTTP API
+      - "9090:9090"  # gRPC
+    environment:
+      - GO_ENV=development
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=emailservice
+      - DB_USER=${POSTGRES_USER}
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - backend
+    healthcheck:
+      test: ["/usr/local/bin/healthcheck.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+        reservations:
+          cpus: '1'
+          memory: 2G
+    restart: unless-stopped
+
+  # Context Engine Service
+  context-engine:
+    build:
+      context: ./context-engine
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"  # FastAPI
+    environment:
+      - ENVIRONMENT=development
+      - MONGODB_URI=mongodb://mongodb:27017/context
+      - REDIS_URL=redis://redis:6379
+      - MODEL_CACHE_DIR=/app/models
+    volumes:
+      - context_models:/app/models
+      - context_tmp:/app/tmp
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 8G
+        reservations:
+          cpus: '2'
+          memory: 4G
+    restart: unless-stopped
+
+  # Response Generator Service
+  response-generator:
+    build:
+      context: ./response-generator
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8000"  # FastAPI
+      - "8080:8080"  # Metrics
+    environment:
+      - ENVIRONMENT=development
+      - MONGODB_URI=mongodb://mongodb:27017/responses
+      - REDIS_URL=redis://redis:6379
+      - MODEL_CACHE_DIR=/app/models
+    volumes:
+      - response_models:/app/models
+      - response_tmp:/app/tmp
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 8G
+        reservations:
+          cpus: '2'
+          memory: 4G
+    restart: unless-stopped
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:14
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=emailservice
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d emailservice"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+    restart: unless-stopped
+
+  # MongoDB Database
+  mongodb:
+    image: mongo:6.0
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USER}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - backend
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+    restart: unless-stopped
+
+  # Redis Cache
+  redis:
+    image: redis:7.0
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 2G
+    restart: unless-stopped
+
+# Define networks
+networks:
+  backend:
+    driver: bridge
+    name: email_backend
+    driver_opts:
+      com.docker.network.bridge.name: email_backend
+      com.docker.network.bridge.enable_icc: "true"
+      com.docker.network.bridge.enable_ip_masquerade: "true"
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.20.0.0/16
+          gateway: 172.20.0.1
+
+# Define volumes
+volumes:
+  postgres_data:
+    driver: local
+    driver_opts:
+      type: none
+      device: /data/postgres
+      o: bind
+    labels:
+      com.example.description: "PostgreSQL data volume"
+      com.example.backup: "daily"
+  
+  mongodb_data:
+    driver: local
+    driver_opts:
+      type: none
+      device: /data/mongodb
+      o: bind
+    labels:
+      com.example.description: "MongoDB data volume"
+      com.example.backup: "daily"
+  
+  redis_data:
+    driver: local
+    driver_opts:
+      type: none
+      device: /data/redis
+      o: bind
+    labels:
+      com.example.description: "Redis data volume"
+      com.example.backup: "daily"
+  
+  context_models:
+    driver: local
+    driver_opts:
+      type: none
+      device: /data/models/context
+      o: bind
+    labels:
+      com.example.description: "Context Engine ML models volume"
+  
+  context_tmp:
+    driver: local
+  
+  response_models:
+    driver: local
+    driver_opts:
+      type: none
+      device: /data/models/response
+      o: bind
+    labels:
+      com.example.description: "Response Generator ML models volume"
+  
+  response_tmp:
+    driver: local
