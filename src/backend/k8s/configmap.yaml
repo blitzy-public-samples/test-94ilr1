@@ -1,0 +1,101 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: email-platform-config
+  namespace: default
+  labels:
+    app: email-platform
+    environment: ${APP_ENV}
+data:
+  # API Gateway Configuration
+  # Reference: src/backend/api-gateway/src/config/kong.config.ts
+  api-gateway.conf: |
+    GATEWAY_PORT=3000
+    GATEWAY_HOST=0.0.0.0
+    LOG_LEVEL=info
+    # Rate limits per minute as per technical specs
+    RATE_LIMIT_EMAIL=100
+    RATE_LIMIT_CONTEXT=200
+    RATE_LIMIT_RESPONSE=50
+    RATE_LIMIT_ANALYTICS=20
+    METRICS_ENABLED=true
+    METRICS_PORT=9091
+    METRICS_PATH=/metrics
+    REQUEST_TIMEOUT=30s
+    CORS_ALLOWED_ORIGINS=*
+    MAX_REQUEST_SIZE=10mb
+
+  # Email Service Configuration
+  # Reference: src/backend/email-service/internal/config/config.go
+  email-service.conf: |
+    PORT=8080
+    LOG_LEVEL=info
+    REQUEST_TIMEOUT=30s
+    SHUTDOWN_TIMEOUT=10s
+    METRICS_ENABLED=true
+    METRICS_PORT=9090
+    METRICS_PATH=/metrics
+    # Database settings
+    DB_HOST=postgres-service
+    DB_PORT=5432
+    DB_NAME=emaildb
+    DB_SSL_MODE=require
+    DB_MAX_CONNECTIONS=100
+    DB_IDLE_TIMEOUT=300s
+    # Email protocol settings
+    SMTP_HOST=smtp-service
+    SMTP_PORT=587
+    IMAP_HOST=imap-service
+    IMAP_PORT=993
+
+  # Context Engine Configuration
+  # Reference: src/backend/context-engine/src/config/settings.py
+  context-engine.conf: |
+    APP_NAME=context-engine
+    APP_VERSION=1.0.0
+    LOG_LEVEL=INFO
+    # MongoDB settings
+    MONGODB_URI=mongodb://mongodb-service:27017
+    MONGODB_DB_NAME=contextdb
+    MONGODB_POOL_SIZE=10
+    # Redis settings
+    REDIS_HOST=redis-service
+    REDIS_PORT=6379
+    REDIS_DB=0
+    CACHE_TTL=3600
+    # Processing settings
+    BATCH_SIZE=100
+    MAX_WORKERS=4
+    REQUEST_TIMEOUT=30
+    MIN_CONFIDENCE_SCORE=0.7
+    MAX_CONFIDENCE_SCORE=1.0
+    # Monitoring
+    METRICS_PORT=9092
+    HEALTH_CHECK_INTERVAL=30s
+    MODEL_UPDATE_INTERVAL=3600s
+
+  # Response Generator Configuration
+  # Reference: src/backend/response-generator/src/config/settings.py
+  response-generator.conf: |
+    APP_NAME=response-generator
+    LOG_LEVEL=INFO
+    # OpenAI model settings
+    OPENAI_MODEL_NAME=gpt-4
+    OPENAI_MAX_TOKENS=2048
+    OPENAI_TEMPERATURE=0.7
+    MIN_CONFIDENCE_THRESHOLD=0.7
+    MAX_TEMPLATE_LENGTH=10000
+    # Database settings
+    MONGODB_URI=mongodb://mongodb-service:27017
+    MONGODB_DB_NAME=responsedb
+    REDIS_URI=redis://redis-service:6379
+    REDIS_DB=1
+    # API settings
+    API_RATE_LIMIT=50
+    API_TIMEOUT=30
+    MAX_RETRIES=3
+    RETRY_DELAY=2
+    # Performance settings
+    METRICS_PORT=9093
+    BATCH_PROCESSING_SIZE=50
+    RESPONSE_CACHE_TTL=1800
