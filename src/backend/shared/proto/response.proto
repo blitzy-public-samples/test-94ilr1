@@ -1,0 +1,307 @@
+syntax = "proto3";
+
+package response.v1;
+
+option go_package = "github.com/email-management-platform/backend/shared/proto/response";
+option java_multiple_files = true;
+option java_package = "com.emailplatform.proto.response.v1";
+option csharp_namespace = "EmailPlatform.Proto.Response.V1";
+
+// Import standard protobuf types
+// @version 3.0.0
+import "google/protobuf/timestamp.proto";
+// @version 3.0.0
+import "google/protobuf/empty.proto";
+// @version 3.0.0
+import "google/protobuf/field_mask.proto";
+
+// Import related proto definitions
+import "../proto/email.proto";
+import "../proto/context.proto";
+
+// ResponseTone defines the tone of the response
+enum ResponseTone {
+  TONE_UNSPECIFIED = 0;
+  TONE_PROFESSIONAL = 1;
+  TONE_FRIENDLY = 2;
+  TONE_FORMAL = 3;
+  TONE_CASUAL = 4;
+  TONE_URGENT = 5;
+}
+
+// ResponseStatus defines the current state of a response
+enum ResponseStatus {
+  STATUS_UNSPECIFIED = 0;
+  STATUS_DRAFT = 1;
+  STATUS_PENDING_REVIEW = 2;
+  STATUS_APPROVED = 3;
+  STATUS_SENT = 4;
+  STATUS_REJECTED = 5;
+}
+
+// TemplateCategory defines the type of response template
+enum TemplateCategory {
+  CATEGORY_UNSPECIFIED = 0;
+  CATEGORY_ACKNOWLEDGMENT = 1;
+  CATEGORY_STATUS_UPDATE = 2;
+  CATEGORY_MEETING_REQUEST = 3;
+  CATEGORY_FOLLOW_UP = 4;
+  CATEGORY_PROJECT_UPDATE = 5;
+}
+
+// Response represents a generated email response with learning capabilities
+message Response {
+  // Unique identifier for the response
+  string response_id = 1;
+  
+  // Associated email identifier
+  string email_id = 2;
+  
+  // Thread identifier for conversation tracking
+  string thread_id = 3;
+  
+  // Generated response content
+  string content = 4;
+  
+  // Template used for generation
+  string template_id = 5;
+  
+  // Tone of the response
+  ResponseTone tone = 6;
+  
+  // Current status
+  ResponseStatus status = 7;
+  
+  // Confidence score of generation
+  float confidence_score = 8;
+  
+  // Relevance to original email
+  float relevance_score = 9;
+  
+  // Context match accuracy
+  float context_match_score = 10;
+  
+  // Generation timestamp
+  google.protobuf.Timestamp generated_at = 11;
+  
+  // Last modification timestamp
+  google.protobuf.Timestamp last_modified_at = 12;
+  
+  // Generator identifier
+  string generated_by = 13;
+  
+  // Approver identifier
+  string approved_by = 14;
+  
+  // Suggested improvements
+  repeated string suggested_improvements = 15;
+  
+  // Additional metadata
+  map<string, string> metadata = 16;
+  
+  // Learning metrics
+  LearningMetrics learning_metrics = 17;
+}
+
+// ResponseTemplate represents a template for response generation
+message ResponseTemplate {
+  // Unique identifier for the template
+  string template_id = 1;
+  
+  // Template name
+  string name = 2;
+  
+  // Template content with placeholders
+  string content = 3;
+  
+  // Template version
+  string version = 4;
+  
+  // Default tone
+  ResponseTone tone = 5;
+  
+  // Required placeholder fields
+  repeated string placeholders = 6;
+  
+  // Required context fields
+  repeated string required_context_fields = 7;
+  
+  // Template tags for categorization
+  repeated string tags = 8;
+  
+  // Template status
+  bool is_active = 9;
+  
+  // Template category
+  TemplateCategory category = 10;
+  
+  // Success rate of template
+  float success_rate = 11;
+  
+  // Usage count
+  int32 usage_count = 12;
+  
+  // Additional metadata
+  map<string, string> metadata = 13;
+  
+  // Creation timestamp
+  google.protobuf.Timestamp created_at = 14;
+  
+  // Last update timestamp
+  google.protobuf.Timestamp updated_at = 15;
+  
+  // Template analytics
+  TemplateAnalytics analytics = 16;
+}
+
+// LearningMetrics tracks response learning system metrics
+message LearningMetrics {
+  // Accuracy of response
+  float accuracy_score = 1;
+  
+  // Sentiment matching score
+  float sentiment_match = 2;
+  
+  // Context relevance score
+  float context_relevance = 3;
+  
+  // Areas needing improvement
+  repeated string improvement_areas = 4;
+  
+  // Feature-specific scores
+  map<string, float> feature_scores = 5;
+  
+  // Last learning update
+  google.protobuf.Timestamp last_learned_at = 6;
+}
+
+// TemplateAnalytics tracks template performance metrics
+message TemplateAnalytics {
+  // Total usage count
+  int32 total_uses = 1;
+  
+  // Average confidence score
+  float average_confidence = 2;
+  
+  // Template approval rate
+  float approval_rate = 3;
+  
+  // Usage by context type
+  map<string, int32> usage_by_context = 4;
+  
+  // Success rate by project
+  map<string, float> success_by_project = 5;
+  
+  // Common template modifications
+  repeated string common_modifications = 6;
+}
+
+// Request message for generating a response
+message GenerateResponseRequest {
+  // Original email
+  email.v1.EmailMessage email = 1;
+  
+  // Email context
+  context.v1.Context context = 2;
+  
+  // Preferred tone
+  ResponseTone preferred_tone = 3;
+  
+  // Template category preference
+  TemplateCategory preferred_category = 4;
+}
+
+// Request message for getting a response
+message GetResponseRequest {
+  string response_id = 1;
+}
+
+// Request message for listing responses
+message ListResponsesRequest {
+  string email_id = 1;
+  string thread_id = 2;
+  ResponseStatus status = 3;
+  int32 page_size = 4;
+  string page_token = 5;
+}
+
+// Response message for listing responses
+message ListResponsesResponse {
+  repeated Response responses = 1;
+  string next_page_token = 2;
+  int32 total_count = 3;
+}
+
+// Request message for updating a response
+message UpdateResponseRequest {
+  Response response = 1;
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+// Request message for creating a template
+message CreateTemplateRequest {
+  ResponseTemplate template = 1;
+}
+
+// Request message for updating a template
+message UpdateTemplateRequest {
+  ResponseTemplate template = 1;
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+// Request message for listing templates
+message ListTemplatesRequest {
+  TemplateCategory category = 1;
+  bool include_inactive = 2;
+  int32 page_size = 3;
+  string page_token = 4;
+}
+
+// Response message for listing templates
+message ListTemplatesResponse {
+  repeated ResponseTemplate templates = 1;
+  string next_page_token = 2;
+  int32 total_count = 3;
+}
+
+// Request message for analyzing template performance
+message AnalyzeTemplateRequest {
+  string template_id = 1;
+  google.protobuf.Timestamp start_time = 2;
+  google.protobuf.Timestamp end_time = 3;
+}
+
+// Request message for getting learning metrics
+message GetLearningMetricsRequest {
+  string response_id = 1;
+}
+
+// ResponseService defines the gRPC service for response operations
+service ResponseService {
+  // Generate a response for an email
+  rpc GenerateResponse(GenerateResponseRequest) returns (Response) {}
+  
+  // Get a single response
+  rpc GetResponse(GetResponseRequest) returns (Response) {}
+  
+  // List responses with filtering
+  rpc ListResponses(ListResponsesRequest) returns (ListResponsesResponse) {}
+  
+  // Update an existing response
+  rpc UpdateResponse(UpdateResponseRequest) returns (Response) {}
+  
+  // Create a new response template
+  rpc CreateTemplate(CreateTemplateRequest) returns (ResponseTemplate) {}
+  
+  // Update an existing template
+  rpc UpdateTemplate(UpdateTemplateRequest) returns (ResponseTemplate) {}
+  
+  // List available templates
+  rpc ListTemplates(ListTemplatesRequest) returns (ListTemplatesResponse) {}
+  
+  // Analyze template performance
+  rpc AnalyzeTemplatePerformance(AnalyzeTemplateRequest) returns (TemplateAnalytics) {}
+  
+  // Get learning metrics for a response
+  rpc GetLearningMetrics(GetLearningMetricsRequest) returns (LearningMetrics) {}
+}
