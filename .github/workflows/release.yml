@@ -1,0 +1,219 @@
+name: Release Pipeline
+
+# Trigger on manual workflow dispatch with version and environment inputs
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (semver)'
+        required: true
+        type: string
+      environment:
+        description: 'Deployment environment'
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+
+# Environment variables
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  RELEASE_VERSION: ${{ github.event.inputs.version }}
+  ENVIRONMENT: ${{ github.event.inputs.environment }}
+  AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+  SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+  SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+
+# Concurrency control to prevent parallel releases
+concurrency:
+  group: release-${{ github.event.inputs.environment }}
+  cancel-in-progress: false
+
+# Required permissions
+permissions:
+  contents: write
+  deployments: write
+  packages: write
+  pull-requests: write
+  id-token: write
+  security-events: write
+
+jobs:
+  prepare:
+    name: Prepare Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate version
+        id: validate_version
+        run: |
+          # Validate semantic version format
+          if ! [[ ${{ env.RELEASE_VERSION }} =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Invalid version format. Must be X.Y.Z"
+            exit 1
+          fi
+          
+          # Check for existing tags
+          if git rev-parse "v${{ env.RELEASE_VERSION }}" >/dev/null 2>&1; then
+            echo "Version ${{ env.RELEASE_VERSION }} already exists"
+            exit 1
+          fi
+
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          # Extract changes since last release
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -n "$LAST_TAG" ]; then
+            CHANGES=$(git log --pretty=format:"- %s" $LAST_TAG..HEAD)
+          else
+            CHANGES=$(git log --pretty=format:"- %s")
+          fi
+          
+          # Create release notes
+          {
+            echo "# Release v${{ env.RELEASE_VERSION }}"
+            echo "## Changes"
+            echo "$CHANGES"
+            echo "## Deployment Instructions"
+            echo "1. Deploy to staging environment first"
+            echo "2. Run smoke tests"
+            echo "3. Deploy to production"
+            echo "## Rollback Procedure"
+            echo "Use infrastructure/scripts/rollback.sh script"
+          } > release_notes.md
+
+      - name: Create release tag
+        run: |
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions"
+          git tag -a "v${{ env.RELEASE_VERSION }}" -m "Release v${{ env.RELEASE_VERSION }}"
+          git push origin "v${{ env.RELEASE_VERSION }}"
+
+  security_scan:
+    name: Security Validation
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Snyk scan
+        uses: snyk/actions/scan@v1
+        with:
+          token: ${{ env.SNYK_TOKEN }}
+          args: --severity-threshold=high
+
+      - name: Run dependency audit
+        run: |
+          cd src/backend && npm audit
+          cd ../web && npm audit
+
+      - name: Generate security report
+        run: |
+          {
+            echo "# Security Scan Results"
+            echo "## Vulnerabilities"
+            echo "- High: ${{ steps.scan.outputs.high }}"
+            echo "- Medium: ${{ steps.scan.outputs.medium }}"
+            echo "- Low: ${{ steps.scan.outputs.low }}"
+          } > security_report.md
+
+  infrastructure:
+    name: Deploy Infrastructure
+    needs: security_scan
+    uses: ./.github/workflows/infrastructure.yml
+    with:
+      environment: ${{ github.event.inputs.environment }}
+      version: ${{ github.event.inputs.version }}
+    secrets: inherit
+
+  backend:
+    name: Deploy Backend
+    needs: infrastructure
+    uses: ./.github/workflows/backend.yml
+    with:
+      environment: ${{ github.event.inputs.environment }}
+      version: ${{ github.event.inputs.version }}
+    secrets: inherit
+
+  frontend:
+    name: Deploy Frontend
+    needs: backend
+    uses: ./.github/workflows/frontend.yml
+    with:
+      environment: ${{ github.event.inputs.environment }}
+      version: ${{ github.event.inputs.version }}
+    secrets: inherit
+
+  verify:
+    name: Verify Deployment
+    needs: [frontend]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: us-west-2
+
+      - name: Run health checks
+        run: |
+          # Check infrastructure health
+          ./infrastructure/scripts/verify-deployment.sh ${{ env.ENVIRONMENT }}
+          
+          # Verify API endpoints
+          curl -f https://api.${{ env.ENVIRONMENT }}.domain.com/health
+          
+          # Check frontend loading
+          curl -f https://${{ env.ENVIRONMENT }}.domain.com
+          
+          # Monitor error rates
+          ./scripts/monitor-errors.sh ${{ env.ENVIRONMENT }} 5
+
+      - name: Verify security configurations
+        run: |
+          # Check SSL/TLS configuration
+          ./scripts/verify-security.sh ${{ env.ENVIRONMENT }}
+
+  publish:
+    name: Publish Release
+    if: github.event.inputs.environment == 'production'
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Create GitHub release
+        uses: actions/create-release@v1
+        with:
+          tag_name: v${{ env.RELEASE_VERSION }}
+          release_name: Release v${{ env.RELEASE_VERSION }}
+          body_path: release_notes.md
+          draft: false
+          prerelease: false
+
+      - name: Upload deployment artifacts
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./deployment_report.md
+          asset_name: deployment_report.md
+          asset_content_type: text/markdown
+
+      - name: Send notifications
+        if: always()
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+            --data '{"text":"Release v${{ env.RELEASE_VERSION }} to ${{ env.ENVIRONMENT }} ${{ job.status }}"}' \
+            ${{ env.SLACK_WEBHOOK }}
